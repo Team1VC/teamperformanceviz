@@ -1,0 +1,35 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<title>Prototype</title>
+		<script src="http://d3js.org/d3.v3.min.js"></script>
+		<style type="text/css" src="styles.css"></style>
+	</head>
+	<body>
+
+		<div id="container">
+			<script type="text/javascript">
+
+				var width = 940,
+					height = 480;
+
+				var images = ["assets/background-mountains.svg", "assets/background-sky.svg"]
+
+				var canvas = d3.select("body")
+								.append("svg")
+								.attr("width", width)
+								.attr("height", height);
+
+				var imgs = canvas.selectAll("image")
+				 				.data(images);
+	    						imgs.enter()
+							        .append("svg:image")
+							        .attr("xlink:href", function (d) { return d; } )
+							        .attr("width", width)
+							        .attr("height", height);
+
+			</script>
+		</div>
+
+	</head>
+</html>
