@@ -13,8 +13,11 @@
 
 				d3.json("team-performance.json", function(data) {
 
-					var width = (data.teamPerformance.length*55),
-						height = 480;
+					console.dir(data);
+
+					var width = (data.teamPerformance.length*100),
+						height = 480,
+						separation = 0;
 
 					var images = ["assets/background-mountains.svg", "assets/background-sky.svg"];
 
@@ -23,26 +26,16 @@
 							.attr("width", width)
 							.attr("height", 700);
 
-					var imgs = canvas.selectAll("image")
-				 				.data(images);
-	    						imgs.enter()
-							        .append("svg:image")
-							        .attr("xlink:href", function (d) { return d; } )
-							        .attr("width", width)
-							        .attr("height", height);
-
-
 					var objects = canvas.selectAll("image")
 										.data(data.teamPerformance)
 										.enter()
 											.append("svg:image")
 											.attr("xlink:href", "assets/mountain.svg")
-											.attr("x", function (d, i) { return (i*55); })
-											.attr("y", 20)
-											.attr("width", function (d) { return ((d.data[4].amount)/1000)*1.25 })
-											.attr("height", function (d) { return (d.data[4].amount)/1000 });
+											.attr("x", function (d, i) { return separation+=(((d.finalTarget)/5000)*.75); })
+											.attr("y", function (d,i) { return height-((d.finalTarget)/5000) })
+											.attr("width", function (d) { return ((d.finalTarget)/5000)*1.25 })
+											.attr("height", function (d) { return (d.finalTarget)/5000 });
 
-				console.dir(data);
 				console.dir(objects);
 
 				})
