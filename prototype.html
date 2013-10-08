@@ -10,34 +10,41 @@
 		<div id="container">
 			<script type="text/javascript">
 
+				var datos;
 				var width = 940,
 					height = 480;
 
-				var images = ["assets/background-mountains.svg", "assets/background-sky.svg"];
+				var canvas = d3.select("#container")
+							.append("svg")
+							.attr("width", width)
+							.attr("height", height)
+							.attr("style","background-image: url('assets/background-mountains.svg');");
 
-				var clouds = ["assets/cloud-01.svg", "assets/cloud-01.svg"];
+				var imgs = canvas.append("g").append("svg:image")
+			        .attr("xlink:href", "assets/background-sky.svg")
+			        .attr("width", width)
+			        .attr("height", height);
 
-				var canvas = d3.select("body")
-								.append("svg")
-								.attr("width", width)
-								.attr("height", height);
 
-				var imgs = canvas.selectAll("image")
-				 				.data(images);
-	    						imgs.enter()
-							        .append("svg:image")
-							        .attr("xlink:href", function (d) { return d; } )
-							        .attr("width", width)
-							        .attr("height", height);
+				d3.json("team-performance.json", function(data) {
 
-				canvas.selectAll("image")
-								.data(clouds);
-								imgs.enter()
-									.append("svg:image")
-							        .attr("xlink:href", function (d) { return d; } )
-							        .attr("width", width)
-							        .attr("height", height);
+					console.dir(data);
 
+					var separation = 0;
+
+					var objects = canvas.append("g").selectAll("image")
+										.data(data.teamPerformance)
+										.enter()
+											.append("svg:image")
+											.attr("xlink:href", "assets/mountain.svg")
+											.attr("x", function (d, i) { return separation+=(((d.finalTarget)/5000)*.75); })
+											.attr("y", function (d,i) { return height-((d.finalTarget)/5000) })
+											.attr("width", function (d) { return ((d.finalTarget)/5000)*1.25 })
+											.attr("height", function (d) { return (d.finalTarget)/5000 });
+
+				console.dir(objects);
+
+				})
 
 			</script>
 		</div>
