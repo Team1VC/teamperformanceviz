@@ -1,0 +1,73 @@
+.domain {
+	display:none;
+}
+
+#agentName {
+    margin: 0;
+    padding: 0;
+}
+
+#percentage{
+	color: #004C00;
+}
+
+#currentAmount {
+	color: #004C00;
+}
+
+#targetAmount {
+	color: #0101DF;
+}
+
+text {
+	font-family: 'Arial';
+	color: #ffffff;
+}
+
+#title {
+	font-family: 'Arial Black';
+	color: #0000FA;
+	font-size: 30px;
+}
+
+#container {
+	margin:0 auto;
+	width: 90%; 
+	height: 480; 
+	background:url(assets/background-sky.svg) 0 0 repeat-x; 
+	background-size: auto 100%; overflow: scroll; 
+	overflow-y:hidden; 
+	padding-bottom:20px;
+	z-index: 101;
+}
+
+.borde-redondeado {
+	font-family:"Arial";
+	position: relative;
+	visibility: hidden;
+	padding-left: 5px;
+	padding-top: 5px;
+	padding-right: 5px;
+	padding-bottom: 5px;
+	-webkit-border-radius: 10px;
+	-webkit-border-bottom-left-radius: 2px;
+	border-width: ;
+	-moz-border-radius: 10px;
+	-moz-border-radius-bottomleft: 2px;
+	border-radius: 10px;
+	border-bottom-left-radius: 10px;
+	width: 200px;
+	height: auto;
+	border-style: solid;
+	border-width: 2px;
+	border-left-width: 2px;
+	border-right-width: 2px;
+	border-color: black;
+	background: rgba(160, 160, 160, 0.8);
+	z-index: 1;
+}
+
+#svgContainer {
+	position: relative;
+	bottom: 200px;
+}

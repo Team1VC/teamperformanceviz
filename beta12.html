@@ -1,0 +1,451 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<title>Prototype</title>
+		<script src="http://d3js.org/d3.v3.min.js"></script>
+		<link rel="stylesheet" href="styles.css"></link>
+	</head>
+	<body>
+
+		<div id="container">
+			<script type="text/javascript">
+
+				//document.getElementById("container").style.width = window.innerWidth*.9;
+
+				function addCommas(nStr)
+				{
+					nStr += '';
+					x = nStr.split('.');
+					x1 = x[0];
+					x2 = x.length > 1 ? '.' + x[1] : '';
+					var rgx = /(\d+)(\d{3})/;
+					while (rgx.test(x1)) {
+						x1 = x1.replace(rgx, '$1' + ',' + '$2');
+					}
+					return x1 + x2;
+				}
+
+				var datos=d3.json("team-performance.json", function(error, data) {
+					var tolerance = 400000;
+					var width = 5500;
+					var	height = 480;
+					var	ticks = 5;
+
+					var datatp = data.teamPerformance;
+
+					var names = data.teamPerformance.map(function(d){ return d.name; });
+
+					var maxFinalTarget = d3.max(data.teamPerformance, function(d){ return d.finalTarget; });	//Look for the maximum final target
+
+					function maxSales(){		//Look for the agent who sold more stuff
+						var maxSales = 0;
+						for (var i = 0; i < datatp.length; i++){
+							for (var j = 0; j < datatp[i].data.length; j++){
+								if (datatp[i].data[j].amount > maxSales){
+									maxSales = datatp[i].data[j].amount;
+								}
+							}
+						}
+						return maxSales;
+					}
+
+					maxSales = maxSales();
+
+					if (maxSales > maxFinalTarget){		//If an agent sold more than the final target of the others, his 
+						maxFinalTarget = maxSales;		//sales are going to be the maximum
+					}
+					
+					var y = d3.scale.linear()
+								.domain([0,maxFinalTarget+tolerance])	//Add tolerance to avoid the graph going out of the container
+								.range([height, 0]);
+
+					var x = d3.scale.ordinal()
+								.domain(names)
+								.rangeRoundBands([0, width],0.1);
+
+					var yAxis = d3.svg.axis()
+								  .scale(y)
+								  .ticks(ticks)
+								  .orient("right");
+
+					var yScale = d3.scale.linear()
+									.domain([0,maxFinalTarget+tolerance])
+									.range([0, height]);
+
+					var aux = 0;
+					var offset = 0;
+
+					function setMax_X(x, i){
+
+						aux = offset;
+						offset += yScale(x);
+
+						if (i == 0){
+							return 0;
+						}
+						else if ((i+1)==datatp.length){
+							return aux;
+						}
+						else {
+							return (aux);
+						}
+					};
+
+					var max_X;
+
+					for (var j = 0 ; j < datatp.length; j++){
+						max_X = setMax_X(datatp[j].data[4].amount, j);
+					}
+
+					width = max_X+50;
+
+					var canvas = d3.select("#container")
+									.append("svg")
+									.attr("id", "svgContainer")
+									.attr("width", width)
+									.attr("height", height)
+									.attr("style","background-image: url('assets/background-mountains.svg');");
+
+					canvas.append("g")
+							.append("text")
+							.attr(
+					        {
+					            "y": 30,
+					           	"x": 10,
+					           	"id" : "title",
+					           	"fill" : "#1E2F82"
+					        })
+			        		.text("Team Performance");
+
+				    var ticks = y.ticks(10);
+
+					var lineas = canvas.selectAll("line").data(ticks).enter().append("g");
+
+					lineas.append("line")
+				        .attr(
+				        {
+				            "class":"horizontalGrid",
+				            "x1" : 0,
+				            "x2" : width,
+				            "y1" : function(d){ return y(d);},
+				            "y2" : function(d){ return y(d);},
+				            "stroke" : "#6590A6",
+				            "stroke-width" : "1.2px",
+				            "stroke-opacity" : "0.2"
+				        });
+
+			        ticks = y.ticks(5);
+
+			        var lineas = canvas.selectAll("text").data(ticks).enter();
+						lineas.append("text")
+				        .attr(
+				        {
+				            "y": function(d){ return y(d)-10; },
+				           	"x": 9
+				        })
+			        	.text(function(d){
+			        			var q=d+"";
+			        			if(q.length>3){
+									q=addCommas(q.substr(0,q.length-3))+"K";
+			        			}
+			        			return "$ "+q;
+			       		});
+
+					var prevWidth = 0;
+
+					var imgs = canvas.append("g");
+
+					function setMax_X(x, i){
+
+							aux = offset;
+							offset += yScale(x);
+
+							if (i == 0){
+								return 0;
+							}
+							else if ((i+1)==datatp.length){
+								return aux;
+							}
+							else {
+								return (aux);
+							}
+						};
+
+					function desplazamiento(x){
+
+						if (x/2 < prevWidth){
+							max_X = max_X -x + x/2;
+							prevWidth = x*.3;
+							return max_X;
+						}
+						else {
+							max_X = max_X - x + prevWidth;
+							prevWidth = x*.3;
+							return max_X;
+						}
+					}
+
+					var widths = new Array();  //Array with the width of each mountain
+					var toolTipCoordinates = new Array(); 
+
+					/*var tooltip = d3.select("body").append("div")
+													.attr("class", "borde-redondeado")
+													.attr("id", "tooltip");*/	
+					
+					for(var i = datatp.length-1; i >= 0; i--){
+
+							
+						var group = imgs.append("g");
+						var width = yScale(datatp[i].data[4].amount)*1.25;
+						var ypos = yScale(datatp[i].data[5].amount);
+							if(ypos>=yScale(datatp[i].data[4].amount)){
+								ypos=yScale(datatp[i].data[4].amount)
+							}
+
+						widths.push(width);
+
+						var dx = desplazamiento(width);
+
+						var yposMeta = yScale(datatp[i].data[4].amount);
+						var yposActual = yScale(datatp[i].data[5].amount);
+						var ypos1 = yScale(datatp[i].data[1].amount);
+						var ypos2 = yScale(datatp[i].data[2].amount);
+						var ypos3 = yScale(datatp[i].data[3].amount);
+						var radio = 7;
+						var bandLado = 35; 
+						var globoLado = 105; 
+						var xPosCircle = 0;
+						var yPosCircle = 0;
+
+						group.append("svg:image")
+							.attr("xlink:href", "assets/cloud-01.svg")
+							.attr("x", dx)
+							.attr("y", (height/2)*Math.random())
+							.attr("width", 120*Math.random())
+							.attr("height", 120*Math.random());
+
+						group.append("svg:image")
+							.attr("xlink:href", "assets/cloud-02.svg")
+							.attr("x", dx+150)
+							.attr("y", (height/2)*Math.random())
+							.attr("width", 120*Math.random())
+							.attr("height", 120*Math.random());
+
+						group.append("svg:image")
+							.attr("xlink:href", "assets/mountain.svg")
+							.attr("class", "mountain")
+							.attr("x", dx)
+							//.attr("y", height).transition().duration(1000)
+							.attr("y", height-yScale(datatp[i].data[4].amount))
+							.attr("width", yScale(datatp[i].data[4].amount)*1.25)
+							.attr("height", 0).transition().duration(500)
+							.attr("height", yScale(datatp[i].data[4].amount));
+
+						if (yposActual==yposMeta) {
+
+							group.append("svg:image")
+								.attr("xlink:href", "assets/flag-annual-target.svg")
+								.attr("x", dx+width/2)
+								.attr("y", height-yposActual-bandLado)
+								.attr("width", bandLado)
+								.attr("height", 0).transition().duration(2000)
+								.attr("height", bandLado);}
+
+						if(yposActual>yposMeta){
+
+							group.append("svg:image")
+								.attr("xlink:href", "assets/balloon.svg")
+								.attr("x", dx+width/2-globoLado/2)
+								.attr("y", height-yposMeta-globoLado).transition().duration(2000)
+								.attr("y", height-yposActual-globoLado*1.23)
+								.attr("width", globoLado)
+								.attr("height", globoLado);}
+						
+						group.append("polygon")
+							.attr("stroke-width", 1.5)
+							.attr("stroke", "#fff")
+							.attr("fill", "#668f30")
+							.attr("fill-opacity", 0).transition().duration(3000)
+							.attr("fill-opacity", 0.9)
+							.attr("points", function(){
+								var p1 = (dx+","+height+" ");
+								var p2 = (dx+(ypos/Math.tan(1.02974426)))+", "+(height-ypos)+" ";
+								var p3 = (dx+width-(ypos/Math.tan(1.02974426)))+", "+(height-ypos)+" ";
+								var p4 = (dx+width)+", "+height;
+								return p1 + p2 + p3 + p4;});
+
+						group.append("svg:image")
+							.attr("xlink:href", "assets/mountain_top.svg")
+							.attr("x", dx)
+							.attr("y", height-yScale(datatp[i].data[4].amount))
+							.attr("width", yScale(datatp[i].data[4].amount)*1.25)
+							//.attr("height", 0).transition().duration(3500)
+							.attr("height", yScale(datatp[i].data[4].amount))
+							.attr("opacity", 0).transition().duration(3000)
+						    .attr("opacity", .9);
+
+						group.append("svg:line")
+							.attr("x1", dx+(ypos1/Math.tan(1.02974426)))
+						    .attr("y1", height-yScale(datatp[i].data[1].amount))
+						    .attr("x2", dx+width-(ypos1/Math.tan(1.02974426)))
+						   	.attr("y2", height-yScale(datatp[i].data[1].amount))
+						    .style("stroke-dasharray", ("8, 5"))
+						    .style("stroke", "#FFF")
+						    .attr("stroke-opacity", 0).transition().duration(3000)
+						    .attr("stroke-opacity", .9);
+
+						group.append("svg:line")
+							.attr("x1", dx+(ypos2/Math.tan(1.02974426)))
+						    .attr("y1", height-yScale(datatp[i].data[2].amount))
+						    .attr("x2", dx+width-(ypos2/Math.tan(1.02974426)))
+						   	.attr("y2", height-yScale(datatp[i].data[2].amount))
+						    .style("stroke-dasharray", ("8, 5"))
+						    .style("stroke", "#FFF")
+						    .attr("stroke-opacity", 0).transition().duration(3000)
+						    .attr("stroke-opacity", .9);
+
+						group.append("svg:line")
+							.attr("x1", dx+(ypos3/Math.tan(1.02974426)))
+						    .attr("y1", height-yScale(datatp[i].data[3].amount))
+						    .attr("x2", dx+width-(ypos3/Math.tan(1.02974426)))
+						   	.attr("y2", height-yScale(datatp[i].data[3].amount))
+						    .style("stroke-dasharray", ("8, 5"))
+						    .style("stroke", "#FFF")
+						    .attr("stroke-opacity", 0).transition().duration(3000)
+						    .attr("stroke-opacity", .9);
+
+						group.append("text")
+					        .attr(
+					        {
+					            "y": height-10 ,
+					           	"x": dx+(width/2)-20
+					        })
+					        .attr("fill", "white")
+					        .attr("opacity", 0).transition().duration(2000)
+					      	.attr("opacity", .9)
+					        .text(datatp[i].name.split(" ")[0]);
+
+				        group.append("svg:line")
+							.attr("x1", dx+width/2)
+						    .attr("y1", height-ypos)
+						    .attr("x2", dx+width/2)
+						   	.attr("y2",height-ypos).transition().duration(2000)
+						   	.attr("y2",function() {
+								var yPos = 0;
+								if(ypos>=yposActual){
+									yPos = height-ypos;
+								}
+								else{
+									yPos = height-yposActual;
+								}
+								return yPos;})
+						   	.attr("stroke-width", 1.5)
+						    .style("stroke", "#FFF");
+
+				        group.append("circle")
+							.attr("cx", function(){
+								if(yposActual<yposMeta){
+									xPosCircle = dx+width;
+								}
+								else{
+									xPosCircle = dx+width/2;
+								}
+								return xPosCircle;})
+							.attr("cy",function(){	
+								if(yposActual<yposMeta){
+									yPosCircle = height;
+								}
+								else{
+									yPosCircle = height - yposMeta;
+								}
+								return yPosCircle;})
+							.transition().duration(2000)					
+							.attr("cx", function(){
+								if(yposMeta>=yposActual){
+									xPosCircle = dx+width-(ypos/Math.tan(1.02974426));
+									toolTipCoordinates.push(xPosCircle);
+								}
+								else{
+									xPosCircle = dx+width/2;
+									toolTipCoordinates.push(xPosCircle);
+								}
+								return xPosCircle;})
+							.attr("cy",function(){				
+									yPosCircle = height-yposActual;
+								return yPosCircle;})
+							.attr("r",  radio)
+							.attr("fill", "white")
+							.attr("stroke", "white").transition().duration(2000)					
+							.attr("stroke",  function() {
+								return "hsl(" + Math.random() * 360 + ",100%,50%)";})
+							.attr("stroke-width",7)
+
+						group.append("polygon")
+							.attr("class", "eventMask")
+							.attr("id", "m"+i)
+							.attr("fill-opacity", 0)
+							.attr("points", function(){
+								var p1 = (dx+","+height+" ");
+								var p2 = (dx+(yposMeta/Math.tan(1.02974426)))+", "+(height-yposMeta)+" ";
+								var p3 = (dx+width-(yposMeta/Math.tan(1.02974426)))+", "+(height-yposMeta)+" ";
+								var p4 = (dx+width)+", "+height;
+								return p1 + p2 + p3 + p4;});
+
+							group.select(".eventMask")
+								.on("click", function(){
+
+									var index = this.id.split("m");
+
+									var tooltip = document.getElementById("tooltip");
+										
+
+									if ((index[1]) == 0){
+										tooltip.style.left = ((toolTipCoordinates[index[1]]))+"px";
+									}
+									else {
+										tooltip.style.left = ((toolTipCoordinates[index[1]])-200)+"px";
+									}
+
+									var tooltipHeight =	height-yScale(datatp[index[1]].data[5].amount)-200;
+
+									if (tooltipHeight <= 0){
+										tooltipHeight = 150;
+									}
+
+									tooltip.style.top = tooltipHeight+"px";
+								
+									tooltip.style.visibility ='visible';
+
+									document.getElementById("agentName").innerHTML = names[index[1]]+"";
+									document.getElementById("currentAmount").innerHTML = (datatp[index[1]].data[5].amount/1000)+"K";
+									document.getElementById("targetAmount").innerHTML = (datatp[index[1]].finalTarget/1000)+"K";
+
+									var percentage = (datatp[index[1]].data[5].amount/datatp[index[1]].finalTarget)*100;
+									percentage = percentage.toString().substring(0, 5);
+									document.getElementById("percentage").innerHTML = percentage+"%";}
+								);
+
+				};
+
+				toolTipCoordinates.reverse(); //NO BORRAR
+			});
+			</script>
+			<div class="borde-redondeado" id="tooltip" align="center">
+			<b>
+			<p id="agentName"><font size="4">Laurie Young</font></p><br/>
+				<font size="3">Sales Performance</font><br/>
+				<font size="2" color="#333333">Attainment vs Annual Goal</font>
+			</p>
+			<p>
+				<text id="currentAmount"><font size="3">$750K</font></text> <font size="4">of</font> 
+				<text id="targetAmount"><font  size="4">$3,200K</font></p></text>
+			<p>
+				<font size="2">% of Annual Goal Met</font><br/>
+				<text id="percentage"><font size="4">23.43%</font></text>
+			</p>
+			</b>
+		</div>
+		</div>
+		
+	</head>
+</html>
